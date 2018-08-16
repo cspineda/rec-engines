@@ -1,0 +1,355 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# IE - Master in Business Analytics and Big Data
+Recommendation Systems
+
+Building a Non Personalized Recommendation Engine
+
+Author: Cris Pineda
+
+========================================================
+
+# Initialization
+
+Import libraries
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(recommenderlab)
+library(data.table)
+library(reshape2)
+```
+
+Load the critics dataset.
+
+```{r}
+critics <- read.csv("/Users/cris/Desktop/Courses/Second Semester/Reccomendation Engines/IE-Lab1-Package/Data/critics.csv")
+View(critics)
+```
+
+# 1) Top 5 Movies, by rating mean
+Calculate mean rating for each movie, ordered with the highest rating listed first, and plot the top 5.
+
+**Expected result**:
+3.600000, 'The Shawshank Redemption'
+3.266667, 'Star Wars IV - A New Hope'
+3.222222, 'Blade Runner'
+3.166667, 'Groundhog Day'
+3.062500, 'The Silence of the Lambs'
+
+```{r fig.width=7, fig.height=6}
+# use colMeans to get the mean rating of each movie (remove first row) and sort by highest ratings and limit to 5
+top5_ratings_mean <- head(sort(colMeans(critics[,-1], na.rm = T), decreasing = T), n=5)
+```
+
+# 2) Top 5 Movies, by rating distribution
+Calculate the percentage of ratings for each movie that are 4 stars or higher. Order with the highest percentage first, and plot the top 5 movies with more high ratings distribution.
+
+**Expected result**:
+0.7000000, 'The Shawshank Redemption'
+0.5333333, 'Star Wars IV - A New Hope'
+0.5000000, 'Gladiator'
+0.4444444, 'Blade Runner'
+0.4375000, 'The Silence of the Lambs'
+
+```{r fig.width=7, fig.height=6}
+# create an empty list for the movies
+movie_list <- list()
+
+
+# Star.Wars.IV...A.New.Hope
+Star.Wars.IV <- critics %>%
+  select("Star.Wars.IV...A.New.Hope") # select only this row
+SWIV <- (sum(Star.Wars.IV == 4, na.rm = T)+sum(Star.Wars.IV == 5, na.rm = T))/sum(Star.Wars.IV>0, na.rm = T) # create new variable to get percentage
+movie_list <- append(movie_list, c("Star.Wars.IV...A.New.Hope", SWIV)) # append to the empty list
+
+## repeat for each movie :(
+
+# Star.Wars.VI...Return.of.the.Jedi
+Star.Wars.VI <- critics %>%
+  select("Star.Wars.VI...Return.of.the.Jedi")
+SWVI <- (sum(Star.Wars.VI == 4, na.rm = T)+sum(Star.Wars.VI == 5, na.rm = T))/sum(Star.Wars.VI>0, na.rm = T)
+movie_list <- append(movie_list, c("Star.Wars.VI...Return.of.the.Jedi", SWVI))
+
+# Forrest.Gump
+Forrest.Gump <- critics %>%
+  select("Forrest.Gump")
+FG <- (sum(Forrest.Gump == 4, na.rm = T)+sum(Forrest.Gump == 5, na.rm = T))/sum(Forrest.Gump>0, na.rm = T)
+movie_list <- append(movie_list, c("Forrest.Gump", FG))
+
+# The.Shawshank.Redemption
+The.Shawshank.Redemption <- critics %>%
+  select("The.Shawshank.Redemption")
+TSR <- (sum(The.Shawshank.Redemption == 4, na.rm = T)+sum(The.Shawshank.Redemption == 5, na.rm = T))/sum(The.Shawshank.Redemption>0, na.rm = T)
+movie_list <- append(movie_list, c("The.Shawshank.Redemption", TSR))
+
+# The.Silence.of.the.Lambs
+The.Silence.of.the.Lambs <- critics %>%
+  select("The.Silence.of.the.Lambs")
+TSOTL <- (sum(The.Silence.of.the.Lambs == 4, na.rm = T)+sum(The.Silence.of.the.Lambs == 5, na.rm = T))/sum(The.Silence.of.the.Lambs>0, na.rm = T)
+movie_list <- append(movie_list, c("The.Silence.of.the.Lambs", TSOTL))
+
+# Gladiator
+Gladiator <- critics %>%
+  select("Gladiator")
+GLAD <- (sum(Gladiator == 4, na.rm = T)+sum(Gladiator == 5, na.rm = T))/sum(Gladiator>0, na.rm = T)
+movie_list <- append(movie_list, c("Gladiator", GLAD))
+
+# Toy.Story
+Toy.Story <- critics %>%
+  select("Toy.Story")
+TS <- (sum(Toy.Story == 4, na.rm = T)+sum(Toy.Story == 5, na.rm = T))/sum(Toy.Story>0, na.rm = T)
+movie_list <- append(movie_list, c("Toy.Story", TS))
+
+# Saving.Private.Ryan
+Saving.Private.Ryan <- critics %>%
+  select("Saving.Private.Ryan")
+SPR <- (sum(Saving.Private.Ryan == 4, na.rm = T)+sum(Saving.Private.Ryan == 5, na.rm = T))/sum(Saving.Private.Ryan>0, na.rm = T)
+movie_list <- append(movie_list, c("Saving.Private.Ryan", SPR))
+
+# Pulp.Fiction
+Pulp.Fiction <- critics %>%
+  select("Pulp.Fiction")
+PF <- (sum(Pulp.Fiction == 4, na.rm = T)+sum(Pulp.Fiction == 5, na.rm = T))/sum(Pulp.Fiction>0, na.rm = T)
+movie_list <- append(movie_list, c("Pulp.Fiction", PF))
+
+# Stand.by.Me
+Stand.by.Me <- critics %>%
+  select("Stand.by.Me")
+SBM <- (sum(Stand.by.Me == 4, na.rm = T)+sum(Stand.by.Me == 5, na.rm = T))/sum(Stand.by.Me>0, na.rm = T)
+movie_list <- append(movie_list, c("Stand.by.Me", SBM))
+
+# Shakespeare.in.Love
+Shakespeare.in.Love <- critics %>%
+  select("Shakespeare.in.Love")
+SIL <- (sum(Shakespeare.in.Love == 4, na.rm = T)+sum(Shakespeare.in.Love == 5, na.rm = T))/sum(Shakespeare.in.Love>0, na.rm = T)
+movie_list <- append(movie_list, c("Shakespeare.in.Love", SIL))
+
+# Total.Recall
+Total.Recall <- critics %>%
+  select("Total.Recall")
+TR <- (sum(Total.Recall == 4, na.rm = T)+sum(Total.Recall == 5, na.rm = T))/sum(Total.Recall>0, na.rm = T)
+movie_list <- append(movie_list, c("Total.Recall", TR))
+
+# Independence.Day
+Independence.Day <- critics %>%
+  select("Independence.Day")
+ID <- (sum(Independence.Day == 4, na.rm = T)+sum(Independence.Day == 5, na.rm = T))/sum(Independence.Day>0, na.rm = T)
+movie_list <- append(movie_list, c("Independence.Day", ID))
+
+# Blade.Runner
+Blade.Runner <- critics %>%
+  select("Blade.Runner")
+BR <- (sum(Blade.Runner == 4, na.rm = T)+sum(Blade.Runner == 5, na.rm = T))/sum(Blade.Runner>0, na.rm = T)
+movie_list <- append(movie_list, c("Blade.Runner", BR))
+
+# Groundhog.Day
+Groundhog.Day <- critics %>%
+  select("Groundhog.Day")
+GD <- (sum(Groundhog.Day == 4, na.rm = T)+sum(Groundhog.Day == 5, na.rm = T))/sum(Groundhog.Day>0, na.rm = T)
+movie_list <- append(movie_list, c("Groundhog.Day", GD))
+
+# The.Matrix
+The.Matrix <- critics %>%
+  select("The.Matrix")
+TM <- (sum(The.Matrix == 4, na.rm = T)+sum(The.Matrix == 5, na.rm = T))/sum(The.Matrix>0, na.rm = T)
+movie_list <- append(movie_list, c("The.Matrix", TM))
+
+# Schindler.s.List
+Schindler.s.List <- critics %>%
+  select("Schindler.s.List")
+SL <- (sum(Schindler.s.List == 4, na.rm = T)+sum(Schindler.s.List == 5, na.rm = T))/sum(Schindler.s.List>0, na.rm = T)
+movie_list <- append(movie_list, c("Schindler.s.List", SL))
+
+
+# The.Sixth.Sense
+The.Sixth.Sense <- critics %>%
+  select("The.Sixth.Sense")
+TSS <- (sum(The.Sixth.Sense == 4, na.rm = T)+sum(The.Sixth.Sense == 5, na.rm = T))/sum(The.Sixth.Sense>0, na.rm = T)
+movie_list <- append(movie_list, c("The.Sixth.Sense", TSS))
+
+# Raiders.of.the.Lost.Ark
+Raiders.of.the.Lost.Ark <- critics %>%
+  select("Raiders.of.the.Lost.Ark")
+ROTLA <- (sum(Raiders.of.the.Lost.Ark == 4, na.rm = T)+sum(Raiders.of.the.Lost.Ark == 5, na.rm = T))/sum(Raiders.of.the.Lost.Ark>0, na.rm = T)
+movie_list <- append(movie_list, c("Raiders.of.the.Lost.Ark", ROTLA))
+
+# Babe
+Babe <- critics %>%
+  select("Babe")
+B <- (sum(Babe == 4, na.rm = T)+sum(Babe == 5, na.rm = T))/sum(Babe>0, na.rm = T)
+movie_list <- append(movie_list, c("Babe", B))
+
+# turn list into data frame and name columns
+movie_df <- data.frame(matrix(unlist(movie_list), ncol=2, byrow=T))
+colnames(movie_df) <- c("Movie","Percentage")
+
+# get the top 5
+movie_df %>%
+  arrange(desc(Percentage)) %>%
+  head(5)
+```
+
+# 3) Top 5 Movies, by quantity of ratings
+Count the number of ratings for each movie, order the one with most number of ratings first, submit the top 5.
+
+**Expected result**:
+17, 'Toy Story'
+16, 'The Silence of the Lambs'
+15, 'Star Wars IV - A New Hope'
+14, 'Star Wars VI - Return of the Jedi'
+13, 'Independence Day'
+
+```{r fig.width=7, fig.height=6}
+# get the total row by nrow and by using sapply, minus the na rows so you get how many ratings each movie has. Then sort by the highest and limit it to 5.
+top5_ratings_count <- head(sort(nrow(critics)-colSums(sapply(critics[,-1],is.na)), decreasing =TRUE), n=5)
+```
+
+# 4) People who watched Star Wars IV also watched ...
+Calculate movies that most often occur with other movie. For each movie, calculate the percentage of the other movie raters who also rated that movie. Order with the highest percentage first, and submit the top 5. Select "Star.Wars.IV...A.New.Hope" movie by defaut. Use the (x+y)/x method.
+
+Top Occurences:
+0.9333333, 'Toy Story'
+0.8666667, 'Star Wars: Episode VI - Return of the Jedi'
+0.8000000, 'The Silence of the Lambs'
+0.7333333, 'Independence Day'
+0.6666667, 'Total Recall'
+
+```{r fig.width=7, fig.height=6}
+# remove all the critics who did not rate Star War IV
+StarWars_fans <- filter(critics, Star.Wars.IV...A.New.Hope>0)
+# remove the first two columns since they are not needed
+StarWars_fans <- StarWars_fans[,-1:-2]
+
+# get the percentage of occurences (might be an easier way but idk) and then sort by highest and limit to 4
+head(sort((nrow(StarWars_fans)-colSums(is.na(StarWars_fans))) / nrow(StarWars_fans), decreasing = T),n=5)
+```
+
+
+# 5) People who liked Babe also liked ...
+Calculate the movies better rated of people who liked a movie. Select the people who liked the movie "Babe" (4 or 5 stars) and provide the top 5 movies they liked most.
+
+**Expected result**:
+5.000, 'Pulp.Fiction'
+5.000, 'Groundhog.Day'
+4.500, 'The.Shawshank.Redemption'
+4.333, 'Toy.Story'
+4.000, 'Blade.Runner'
+
+```{r fig.width=7, fig.height=6}
+# filter dataset by users who rated "Babe" 4 or 5 stars
+Babe_lovers <- filter(critics, Babe == 4 | Babe == 5)
+
+# use colMeans to get the mean of each movie from the filtered data set and set the results to the top 5
+Babe_lovers <- head(sort(colMeans(Babe_lovers[,-1], na.rm = T), decreasing = T), n=5)
+
+Babe_lovers
+```
+
+# 6) MovieLens
+Explore a real data set and provide non-personalized ratings. You can use the MovieLens database. You can find MovieLens' dataset here: http://files.grouplens.org/datasets/movielens/ml-10m-README.html
+
+```{r}
+# load both data sets
+real_movie <- read.csv("/Users/cris/Desktop/Courses/Second Semester/Reccomendation Engines/IE-Lab1-Package/Data/ml-latest-small/movies.csv")
+real_rating <- read.csv("/Users/cris/Desktop/Courses/Second Semester/Reccomendation Engines/IE-Lab1-Package/Data/ml-latest-small/ratings.csv")
+
+# merge two data frames by ID
+MovieLens <- merge(real_movie,real_rating,by="movieId")
+MovieLens$rating <- as.numeric(MovieLens$rating)
+
+# check for top 10 rated (quantity) movies
+mostRated <- MovieLens %>%
+  group_by(movieId) %>%
+  summarise(qt = n()) %>%
+  arrange(desc(qt)) %>%
+  head(10)
+
+# filter MovieLens
+MovieLens <- MovieLens %>%
+  select(movieId, title, userId, rating) %>%
+  filter(movieId %in% c(356, 296, 318, 593, 260, 480, 2571, 1, 527, 589))
+
+# now get rid of movieId
+MovieLens <- MovieLens[,-1]
+
+# use reshape to convert it to similar format of the exercise
+MovieLens <- dcast(MovieLens, title ~ userId)
+
+# we dont need all of them for the sample
+MovieLens <- MovieLens[ ,1:21]
+
+# transpose it
+MovieLens <- t(MovieLens)
+
+# fix the column names again
+colnames(MovieLens) <- MovieLens[1,]
+MovieLens <- MovieLens[-1,]
+
+MovieLens1 <- as.numeric(as.character(MovieLens))
+
+# having multiple errors trying to convert MovieLens to numeric so I will export it, change it on DataIku and bring it back
+write.csv(MovieLens, file = "MovieLens.csv")
+
+MovieLens <- read.csv("/Users/cris/MovieLens.csv", header = T)
+
+# fix the row names again
+rownames(MovieLens) <- MovieLens[,1]
+MovieLens <- MovieLens[,-1]
+```
+
+Now we give some recommendations
+
+# Top 5 Ratings by Mean
+```{r}
+ML5 <- head(sort(colMeans(MovieLens, na.rm = T), decreasing = T), n=3)
+
+ML5
+```
+
+The top 3 reccomendations are The Shawshank Redemption, The Matrix, and Terminator 2: Judgmement Day.
+
+
+For users who liked Schindler's List, what movie they would like...
+```{r fig.width=7, fig.height=6}
+# filter dataset by users who rated "Babe" 4 or 5 stars
+Schindlers_Lovers <- filter(MovieLens, Schindler.s.List..1993. == 4 | Schindler.s.List..1993. == 5)
+
+Schindlers_Lovers <- head(sort(colMeans(Schindlers_Lovers, na.rm = T), decreasing = T), n=1)
+
+Schindlers_Lovers
+```
+
+Users who liked Schindler's List would probably like The Matrix most from these movies.
+
+
+Let us see for Jurassic Park
+```{r fig.width=7, fig.height=6}
+# filter dataset by users who rated "Babe" 4 or 5 stars
+JP_lovers <- filter(MovieLens, Jurassic.Park..1993. == 4 | Jurassic.Park..1993. == 5)
+
+JP_lovers <- head(sort(colMeans(JP_lovers, na.rm = T), decreasing = T), n=1)
+
+JP_lovers
+```
+
+Users who like Jurassic Park would probably like Pulp Fiction most from these movies.
+
+
+Okay let us see for users who liked Forrest Gump, which movie they would probably like the least out of these top 10.
+
+```{r fig.width=7, fig.height=6}
+# filter dataset by users who rated "Babe" 4 or 5 stars
+haters <- filter(MovieLens, Forrest.Gump..1994. == 4 | Forrest.Gump..1994. == 5)
+
+# use colMeans to get the mean of each movie from the filtered data set and set the results to the top 5
+haters <- head(sort(colMeans(haters, na.rm = T), decreasing = F), n=1)
+
+haters
+```
+
+Users who liked Forrest Gump would probably like The Silence of the Lambs the least out of these movies.

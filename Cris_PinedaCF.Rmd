@@ -1,0 +1,205 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# IE - Master in Business Analytics and Big Data
+Recommendation Systems
+
+Building a Collaborative Filtering Engine
+
+Author: FirstName LastName
+
+========================================================
+
+# Initialization
+
+Import libraries
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(recommenderlab)
+library(data.table)
+library(reshape2)
+library(Hmisc)
+```
+
+Load the critics dataset.
+
+```{r}
+critics <- read.csv("/Users/cris/Desktop/Courses/Second Semester/Reccomendation Engines/IE-Lab1-Package/Data/critics.csv", header = T)
+View(critics)
+```
+
+# 1) Pearson correlation coefficient 
+Calculate the Pearson correlation coefficient between Victoria and Nuria
+
+**Expected correlation between Victoria and Nuria**: 0.3651484
+
+```{r fig.width=7, fig.height=6}
+# transpose the data frame
+critics_t <- data.frame(t(critics))
+
+# turn the first row into the header
+critics_t <- critics_t[-1, ] # removing the first row.
+colnames(critics_t) = c("John", "Maria", "Anton", "Roger", "Martina", "Ana", "Sergi", "Marc", "Jim", "Chris", "Bernard", "Nuria", "Nerea", "Carles", "Victoria", "Ivan", "Rachel", "Nadia", "Oriol", "Valery") # assign names to headers
+
+# create the correlation matrix using the Hmisc library
+critics_t_corr <- rcorr(as.matrix(critics_t, type="pearson"))
+critics_t_corr = critics_t_corr$r
+
+# filter the correlation between Victoria and Nuria
+VicNur <- critics_t_corr["Victoria", 'Nuria']
+
+cat("Expected correlation between Victoria and Nuria:", VicNur)
+```
+# 2) Compare two movie critics
+Using the calculated Pearson correlation in the previous section. Compare and show the movie ratings for Victoria and Nuria on a scatter plot. How is this compared with the same ratings of Maria and Nerea on a scatter plot? What about Chris and Jim? What it means?
+
+```{r}
+# plot Victoria and Nuria
+ggplot(data = critics_t) +
+  geom_point(aes(x = critics_t[, "Victoria"], y = critics_t[, "Nuria"], color=I("blue")))
+cat("Expected correlation between Victoria and Nuria:", critics_t_corr["Victoria", 'Nuria'])
+
+# plot Maria and Nerea
+ggplot(data = critics_t) +
+  geom_point(aes(x = critics_t[, "Maria"], y = critics_t[, "Nerea"], color=I("blue")))
+cat("Expected correlation between Maria and Nerea:", critics_t_corr["Maria", 'Nerea'])
+
+# plot Chris and Jim
+ggplot(data = critics_t) +
+  geom_point(aes(x = critics_t[, "Chris"], y = critics_t[, "Jim"], color=I("blue")))
+cat("Expected correlation between Chris and Jim:", critics_t_corr["Chris", 'Jim'])
+```
+
+Victoria and Nuria have a higher corrleation than Maria and Nerea, but Chris and Jim have a higher correlation than Victoria and Nuria with a value of 0.8255243.
+
+# 3) Top Recommendations 
+Get the top 5 movies recommended for Victoria. by using a weighted average of every other critic's rankings.
+
+**Expected result**:
+'The Matrix'
+'Forrest Gump'     
+'The Sixth Sense' 
+'Shakespeare in Love'
+'Blade Runner'
+
+
+```{r}
+# use correlations and convert to numeric
+critics_tn <- data.frame(lapply(critics_t, as.numeric))
+critics_tn$movie <- rownames(critics_t) # add row names that were deleted
+rownames(critics_tn) <- critics_tn[,21] # turn that column to row names
+critics_tn <- critics_tn[,-21] # get rid of it now
+
+# get mean for each User
+cmeans <- sapply(critics_tn, mean, na.rm = T)
+
+# movies Victoria has not seen
+noVic <- rownames(critics_tn[is.na(critics_tn$Victoria == "NA"), 15, drop=FALSE])
+noVic <- critics_tn[is.na(critics_tn$Victoria == "NA"), ]
+#sumcols <- colSums(corrdf, na.rm = T)
+
+# add the means to the noVic dataframe
+newcritics <- cbind(critics_tn, cmeans)
+
+# corrleation for Victoria
+Victoria <- critics_t_corr[-15, "Victoria"]
+
+# save correlations
+cJohn = 0.27709796
+cMaria = 0.49259218
+cAnton = -0.18466410
+cRoger = -0.30698876
+cMartina = 0.04771653
+cAna = 0.59761430
+cSergi = 0.03636965
+cMarc = 0.07934228
+cJim = -0.44451445
+cChris = -0.34426519
+cBernard = -0.18649966
+cNuria = 0.36514837
+cNerea = 0.20573780
+cCarles = 0.42732467
+cIvan = -0.73277672
+cRachel = 0.94491118
+cNadia = -0.58737848
+cOriol = 0.57897945
+cValery = -0.08811342
+
+# sort correlations by highest
+sort(Victoria, decreasing = T)
+
+# create the correlation df
+corrdf <- noVic %>%
+  mutate(John = (John - cmeans["John"]) * cJohn,
+         Maria = (Maria - cmeans["Maria"]) * cMaria,
+         Anton = (Anton - cmeans["Anton"]) * cAnton,
+         Roger = (Roger - cmeans["Roger"]) * cRoger,
+         Martina = (Martina - cmeans["Martina"]) * cMartina,
+         Ana = (Ana - cmeans["Ana"]) * cAna,
+         Sergi = (Sergi - cmeans["Sergi"]) * cSergi,
+         Marc = (Marc - cmeans["Marc"]) * cMarc,
+         Jim = (Jim - cmeans["Jim"]) * cJim,
+         Chris = (Chris - cmeans["Chris"]) * cChris,
+         Bernard = (Bernard - cmeans["Bernard"]) * cBernard,
+         Nuria = (Nuria - cmeans["Nuria"]) * cNuria,
+         Nerea = (Nerea - cmeans["Nerea"]) * cNerea,
+         Carles = (Carles - cmeans["Carles"]) * cCarles,
+         Ivan = (Ivan - cmeans["Ivan"]) * cIvan,
+         Rachel = (Rachel - cmeans["Rachel"]) * cRachel,
+         Nadia = (Nadia - cmeans["Nadia"]) * cNadia,
+         Oriol = (Oriol - cmeans["Oriol"]) * cOriol,
+         Valery = (Valery - cmeans["Valery"]) * cValery)
+
+# row names was deleted to we need to create it again
+corrdf$movie <- rownames(noVic)
+
+# turn that move column back into row names
+rownames(corrdf) <- corrdf[,21]
+corrdf <- corrdf[,-21] # get rid of it now
+
+# sum all the new rows
+sumrows <- rowSums(corrdf, na.rm = T)
+
+# find total pearson correlation
+total_corr <- sum(abs(sumrows)) 
+# 8.598467
+
+# save average rating of Vic
+VicA <- cmeans["Victoria"]
+
+# the equation
+final = VicA + (sumrows/total_corr)
+
+# show top 5
+Vic5 <- head(sort(final, decreasing = T), n=5)
+
+# display
+Vic5
+```
+
+
+
+# 4) Top similar critics
+Return the top 5 critics that are most similar to Victoria. 
+
+**Expected result**:
+0.9449112, 'Rachel'
+0.5976143, 'Ana' 
+0.5789794, 'Oriol'
+0.4925922, 'Maria'
+0.4273247, 'Carles'
+
+```{r fig.width=7, fig.height=6}
+# use the correlation matrix created for question 1
+critics_t_corr
+
+# filter by Victoria column and remove Victoria row
+Victoria <- critics_t_corr[-15, "Victoria"]
+
+# sort by highest and limit to 5
+head(sort(Victoria, decreasing = T), n=5)
+```
